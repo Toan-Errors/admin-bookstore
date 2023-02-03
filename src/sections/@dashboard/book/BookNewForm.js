@@ -4,11 +4,11 @@ import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo } from 'react';
 // form
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 // @mui
 import { styled } from '@mui/material/styles';
 import { LoadingButton } from '@mui/lab';
-import { Card, Grid, Stack, Typography, InputAdornment } from '@mui/material';
+import { Card, Grid, Stack, Typography, InputAdornment, Autocomplete, Chip, TextField } from '@mui/material';
 // routes
 import countries from "src/assets/json/country.json";
 import { PATH_DASHBOARD } from 'src/routes/paths';
@@ -17,18 +17,48 @@ import { fDateTimeISO } from 'src/utils/formatTime';
 // components
 import {
   FormProvider,
-  RHFSwitch,
+  // RHFSwitch,
   RHFSelect,
   RHFEditor,
   RHFTextField,
   RHFUploadMultiFile,
 } from 'src/components/hook-form';
+import { IMAGE_CDN } from 'src/config';
+import axiosInstance from 'src/utils/axios';
+import { useDispatch } from 'react-redux';
+import { getBooks } from 'src/redux/slices/book';
 
 const LabelStyle = styled(Typography)(({ theme }) => ({
   ...theme.typography.subtitle2,
   color: theme.palette.text.secondary,
   marginBottom: theme.spacing(1),
 }));
+
+const genresList = [
+  { value: 'Action', label: 'Action' },
+  { value: 'Adventure', label: 'Adventure' },
+  { value: 'Comedy', label: 'Comedy' },
+  { value: 'Crime', label: 'Crime' },
+  { value: 'Drama', label: 'Drama' },
+  { value: 'Fantasy', label: 'Fantasy' },
+  { value: 'Historical', label: 'Historical' },
+  { value: 'Historical fiction', label: 'Historical fiction' },
+  { value: 'Horror', label: 'Horror' },
+  { value: 'Magical realism', label: 'Magical realism' },
+  { value: 'Mystery', label: 'Mystery' },
+  { value: 'Paranoid fiction', label: 'Paranoid fiction' },
+  { value: 'Philosophical', label: 'Philosophical' },
+  { value: 'Political', label: 'Political' },
+  { value: 'Romance', label: 'Romance' },
+  { value: 'Saga', label: 'Saga' },
+  { value: 'Satire', label: 'Satire' },
+  { value: 'Science fiction', label: 'Science fiction' },
+  { value: 'Social', label: 'Social' },
+  { value: 'Speculative', label: 'Speculative' },
+  { value: 'Thriller', label: 'Thriller' },
+  { value: 'Urban', label: 'Urban' },
+  { value: 'Western', label: 'Western' }
+];
 
 // ----------------------------------------------------------------------
 
@@ -41,6 +71,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
   const navigate = useNavigate();
 
   const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useDispatch();
 
   // const NewProductSchema = Yup.object().shape({
   //   prod_name: Yup.string().required('Name is required'),
@@ -76,7 +107,6 @@ export default function BookNewForm({ isEdit, currentBook }) {
       price: currentBook?.price || 0,
       saleDate: fDateTimeISO(currentBook?.saleDate) || fDateTimeISO(new Date()),
       genres: currentBook?.genres || [],
-      coverImage: currentBook?.coverImage || '',
       images: currentBook?.images || [],
     }),
     [currentBook]
@@ -90,7 +120,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
   const {
     reset,
     watch,
-    // control,
+    control,
     setValue,
     getValues,
     handleSubmit,
@@ -111,43 +141,24 @@ export default function BookNewForm({ isEdit, currentBook }) {
 
   const onSubmit = async () => {
     try {
-      // const data = new FormData();
-      // data.append('prod_name', getValues('prod_name'));
-      // data.append('prod_description', getValues('prod_description'));
-      // data.append('prod_abv_percent', getValues('prod_abv_percent'));
-      // data.append('prod_volume', getValues('prod_volume'));
-      // data.append('prod_age', getValues('prod_age'));
-      // data.append('prod_vintage', getValues('prod_vintage'));
-      // data.append('prod_type', getValues('prod_type'));
-      // data.append('prod_class', getValues('prod_class'));
-      // data.append('prod_lot_type', getValues('prod_lot_type'));
-      // data.append('prod_category', getValues('prod_category'));
-      // data.append('prod_country', getValues('prod_country'));
-      // data.append('prod_region', getValues('prod_region'));
-      // data.append('prod_location_of_bottle', getValues('prod_location_of_bottle'));
-      // data.append('prod_seller_name', getValues('prod_seller_name'));
-      // data.append('prod_distillery', getValues('prod_distillery'));
-      // data.append('prod_price', getValues('prod_price'));
-      // data.append('prod_price_sale', getValues('prod_price_sale'));
-      // if (!isEdit) {
-      //   for (let i = 0; i < getValues('prod_list_photo').length; i += 1) {
-      //     data.append('prod_list_photo', getValues('prod_list_photo')[i]);
-      //   }
-      //   await axiosInstance.post('/product/create', data, {
-      //     headers: {
-      //       'Content-Type': 'multipart/form-data',
-      //       'Authorization': `Token ${localStorage.getItem('accessToken')}`
-      //     },
-      //   });
-      // } else {
-      //   await axiosInstance.put(`/product/update/${currentBook?._id}`, data, {
-      //     headers: {
-      //       'Content-Type': 'multipart/form-data',
-      //       'Authorization': `Token ${localStorage.getItem('accessToken')}`
-      //     },
-      //   });
-      // }
+
+      const { images, ...data } = getValues();
+      if (images.length === 0) return enqueueSnackbar('Images is required', { variant: 'error' });
+      if (images[0].preview) return enqueueSnackbar('Images is required', { variant: 'error' });
+      enqueueSnackbar('Loading...', { variant: 'info' });
+      const dataSubmit = {
+        ...data,
+        coverImage: images[0],
+        images: images
+      };
+
+      if (isEdit) {
+        await axiosInstance.put(`/books/${currentBook._id}`, dataSubmit);
+      } else {
+        await axiosInstance.post('/books', dataSubmit);
+      }
       reset();
+      dispatch(getBooks());
       enqueueSnackbar(!isEdit ? 'Create success!' : 'Update success!');
       navigate(PATH_DASHBOARD.eCommerce.list);
     } catch (error) {
@@ -179,6 +190,30 @@ export default function BookNewForm({ isEdit, currentBook }) {
     setValue('images', filteredItems);
   };
 
+  const handleUploadAll = async () => {
+    // upload image to cdn server https://cdn.amony.app
+    try {
+      enqueueSnackbar('Uploading...', { variant: 'info' });
+      const formData = new FormData();
+      values.images?.forEach((file) => {
+        formData.append('image', file);
+      });
+      // use fetch api to upload image
+      const response = await fetch(IMAGE_CDN + '/multiple',
+        {
+          method: 'POST',
+          body: formData,
+        });
+      const data = await response.json();
+      enqueueSnackbar('Upload success!');
+      // set image url to form
+      const images = data.map((item) => `${IMAGE_CDN}/${item}`);
+      setValue('images', images);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={3}>
@@ -186,6 +221,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
           <Card sx={{ p: 3 }}>
             <Stack spacing={3}>
               <RHFTextField name="title" label="Title" />
+              <RHFTextField name="subtitle" label="Sub title" />
               <div>
                 <LabelStyle>Description</LabelStyle>
                 <RHFEditor simple name="description" />
@@ -201,6 +237,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
                   onDrop={handleDrop}
                   onRemove={handleRemove}
                   onRemoveAll={handleRemoveAll}
+                  onUploadAll={handleUploadAll}
                 />
               </div>
             </Stack>
@@ -210,7 +247,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
         <Grid item xs={12} md={5}>
           <Stack spacing={3}>
             <Card sx={{ p: 3 }}>
-              <RHFSwitch name="inStock" label="In stock" />
+              {/* <RHFSwitch name="inStock" label="In stock" /> */}
 
               <Stack spacing={3} mt={2}>
                 <Stack direction="row" spacing={2}>
@@ -237,8 +274,32 @@ export default function BookNewForm({ isEdit, currentBook }) {
                     ))}
                   </RHFSelect>
                 </Stack>
-                <Stack direction="row" spacing={2}>
-                </Stack>
+                {/* <Stack direction="row" spacing={2}>
+                </Stack> */}
+
+                <Controller
+                  name="genres"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      {...field}
+                      multiple
+                      onChange={(event, newValue) => {
+                        return field.onChange(newValue);
+                      }}
+                      options={genresList.map((option) => option.label)}
+                      getOptionLabel={(option) => option}
+                      renderTags={(value, getTagProps) => {
+                        return (
+                          value.map((option, index) => (
+                            <Chip {...getTagProps({ index })} key={index} size="small" label={option} />
+                          )))
+                      }
+                      }
+                      renderInput={(params) => <TextField label="Genres" {...params} />}
+                    />
+                  )}
+                />
               </Stack>
             </Card>
 
@@ -277,7 +338,7 @@ export default function BookNewForm({ isEdit, currentBook }) {
                 />
               </Stack>
 
-              <RHFSwitch name="taxes" label="Price includes taxes" />
+              {/* <RHFSwitch name="taxes" label="Price includes taxes" /> */}
             </Card>
 
             <LoadingButton type="submit" variant="contained" size="large" loading={isSubmitting}>

@@ -34,9 +34,10 @@ MultiFilePreview.propTypes = {
   showPreview: PropTypes.bool,
   onRemove: PropTypes.func,
   onRemoveAll: PropTypes.func,
+  onUploadAll: PropTypes.func,
 };
 
-export default function MultiFilePreview({ showPreview = false, files, onRemove, onRemoveAll }) {
+export default function MultiFilePreview({ showPreview = false, files, onRemove, onRemoveAll, onUploadAll }) {
   const hasFile = files.length > 0;
   return (
     <>
@@ -121,7 +122,7 @@ export default function MultiFilePreview({ showPreview = false, files, onRemove,
           <Button color="inherit" size="small" onClick={onRemoveAll}>
             Remove all
           </Button>
-          <Button size="small" variant="contained">
+          <Button size="small" variant="contained" onClick={onUploadAll}>
             Upload files
           </Button>
         </Stack>

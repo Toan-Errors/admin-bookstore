@@ -41,7 +41,7 @@ export default function BookCreate() {
               name: 'Books',
               href: PATH_DASHBOARD.eCommerce.root,
             },
-            { name: !isEdit ? 'New book' : currentBook.title },
+            { name: !isEdit ? 'New book' : currentBook?.title },
           ]}
         />
         <BookNewForm isEdit={isEdit} currentBook={currentBook} />

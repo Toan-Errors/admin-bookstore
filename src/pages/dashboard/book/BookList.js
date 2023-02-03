@@ -33,7 +33,7 @@ import Scrollbar from 'src/components/Scrollbar';
 import SearchNotFound from 'src/components/SearchNotFound';
 import HeaderBreadcrumbs from 'src/components/HeaderBreadcrumbs';
 // sections
-import { getBooks } from 'src/redux/slices/book';
+import { deleteBook, getBooks } from 'src/redux/slices/book';
 import { BookListToolbar, BookMoreMenu } from 'src/sections/@dashboard/book';
 import BookListHead from 'src/sections/@dashboard/book/BookListHead';
 
@@ -112,13 +112,12 @@ export default function BookList() {
     setFilterName(filterName);
   };
 
-  const handleDeleteProduct = (productId) => {
-    const deleteProduct = bookList.filter((product) => product._id !== productId);
+  const handleDeleteBook = (productId) => {
+    dispatch(deleteBook(productId));
     setSelected([]);
-    setBookList(deleteProduct);
   };
 
-  const handleDeleteProducts = (selected) => {
+  const handleDeleteBooks = (selected) => {
     const deleteProducts = bookList.filter((product) => !selected.includes(product._id));
     setSelected([]);
     setBookList(deleteProducts);
@@ -150,7 +149,7 @@ export default function BookList() {
             numSelected={selected.length}
             filterName={filterName}
             onFilterName={handleFilterByName}
-            onDeleteProducts={() => handleDeleteProducts(selected)}
+            onDeleteProducts={() => handleDeleteBooks(selected)}
           />
 
           <Scrollbar>
@@ -195,7 +194,7 @@ export default function BookList() {
                         <TableCell style={{ minWidth: 160 }}>{fDate(row?.createdAt)}</TableCell>
                         <TableCell align="right">{fCurrencyVND(row?.price)}đ</TableCell>
                         <TableCell align="right">
-                          <BookMoreMenu bookId={row._id} onDelete={() => handleDeleteProduct(row._id)} />
+                          <BookMoreMenu bookId={row._id} onDelete={() => handleDeleteBook(row._id)} />
                         </TableCell>
                       </TableRow>
                     );

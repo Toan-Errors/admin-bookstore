@@ -38,6 +38,18 @@ const slice = createSlice({
       state.isLoading = false;
       state.books = action.payload;
     },
+
+    // delete book
+    deleteBookSuccess(state, action) {
+      state.isLoading = false;
+      state.books = state.books.filter((book) => book._id !== action.payload);
+    },
+
+    // delete books
+    deleteBooksSuccess(state, action) {
+      state.isLoading = false;
+      state.books = state.books.filter((book) => !action.payload.includes(book._id));
+    },
   }
 })
 
@@ -52,6 +64,30 @@ export function getBooks() {
       dispatch(slice.actions.getBooksSuccess(response.data));
     } catch (error) {
       dispatch(slice.actions.hasError(error));
+    }
+  };
+}
+
+export function deleteBook(id) {
+  return async () => {
+    dispatch(slice.actions.startLoading());
+    try {
+      await axios.delete(`/books/${id}`);
+      dispatch(slice.actions.deleteBookSuccess(id));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+}
+
+export function deleteBooks(ids) {
+  return async () => {
+    dispatch(slice.actions.startLoading());
+    try {
+      await axios.delete(`/books/multiple`, { data: { ids } });
+      dispatch(slice.actions.deleteBooksSuccess(ids));
+    } catch (error) {
+      console.log(error);
     }
   };
 }
